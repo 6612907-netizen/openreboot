@@ -1,0 +1,35 @@
+name: CI
+
+# 与本地完全同一个入口：`npm run gate`。
+# 不在 CI 里另写一套判据 —— 两套判据迟早会互相说谎。
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Run gate (typecheck + tests + build, fail-closed on empty test set)
+        run: npm run gate
+      - name: Upload gate report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gate-report
+          path: .gate/vitest.json
+      - name: Upload distributable build
+        uses: actions/upload-artifact@v4
+        with:
+          name: openreboot-dist
+          path: dist/

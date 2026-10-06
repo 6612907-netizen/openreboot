@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="OpenReboot">
+  <rect width="512" height="512" rx="112" fill="#101418"/>
+  <path d="M256 118a138 138 0 1 0 118 62" fill="none" stroke="#63b3a1" stroke-width="30" stroke-linecap="round"/>
+  <path d="M374 96v96h-96" fill="none" stroke="#63b3a1" stroke-width="30" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="256" cy="256" r="34" fill="#e8edf2"/>
+</svg>

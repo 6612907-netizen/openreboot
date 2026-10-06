@@ -1,0 +1,20 @@
+{
+  "name": "OpenReboot",
+  "short_name": "OpenReboot",
+  "description": "开源、本地优先的个人改变训练系统。目标不是让你一直用它。",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#101418",
+  "theme_color": "#101418",
+  "categories": ["productivity", "lifestyle", "health"],
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

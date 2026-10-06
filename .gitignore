@@ -1,0 +1,6 @@
+node_modules/
+dist/
+.gate/
+*.tsbuildinfo
+.DS_Store
+coverage/
