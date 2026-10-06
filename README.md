@@ -3,7 +3,7 @@
 > **Our goal is not to maximize engagement.**
 > **Our goal is to make OpenReboot progressively unnecessary.**
 
-开源、本地优先的**个人改变训练系统**。中文优先界面，英文文案见 `README.en.md`（待补）。
+开源、本地优先的**个人改变训练系统**。界面目前只有中文文案层，英文待补。
 
 它不是 Todo List，不是习惯打卡软件，不是 AI 聊天机器人，也不是心理诊断工具。
 
@@ -108,6 +108,9 @@ OpenReboot **不是**医疗、心理健康或诊断工具，不提供治疗、�
 ---
 
 ## 当前状态与已知缺口
+
+逐条对照方案书的证据表见 [docs/SPEC-COVERAGE.md](docs/SPEC-COVERAGE.md)：每一节写了落在哪个文件、
+由哪条测试或哪次实测证明、以及状态是「成立 / 部分 / 未证」。
 
 v0.1 MVP。诚实列出没做到的：
 
