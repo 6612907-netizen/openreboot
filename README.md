@@ -71,6 +71,20 @@ npx serve dist                 # 本机预览
 打开站点后，浏览器地址栏右侧会出现安装按钮（Chrome / Edge），或 Safari 分享菜单里选"添加到主屏幕"。
 离线后仍可使用 —— Service Worker 会把已访问过的资源留在本机。
 
+### 怎么在真浏览器里验一遍
+
+门禁（`npm run gate`）跑的是 jsdom，它能证明逻辑对，证不了「构建产物在真实浏览器里能不能点、
+数据能不能落进真实 IndexedDB、断网能不能打开」。这三条是上面的硬承诺，所以另有一枚手动脚本：
+
+```bash
+npm run build && npx vite preview --port 4173 &
+python3 tools/browser-smoke.py     # 需要 playwright；逐步打点，任一步红即退出码 1
+```
+
+它跑过 15 项：欢迎页无目标入口、七题→领域→主领域→建 Change、领域上限 3、
+刷新后仍在原阶段、IndexedDB 已建、Service Worker 已激活、断网可开、请求全同源、控制台零报错。
+不进 CI —— 门禁不该依赖一台有浏览器的机器。
+
 ---
 
 ## 数据在哪，谁能看到
@@ -109,6 +123,9 @@ v0.1 MVP。诚实列出没做到的：
 
 先跑 `npm run gate`，全绿再提 PR。不要放宽任何测试阈值 ——
 上面那些测试就是产品的边界本身，把它们改绿等于把产品改成别的东西。
+细则见 [CONTRIBUTING.md](CONTRIBUTING.md)，安全问题请按 [SECURITY.md](SECURITY.md) 里的私密渠道报。
+
+版本改动记在 [CHANGELOG.md](CHANGELOG.md)。
 
 ## 许可
 
