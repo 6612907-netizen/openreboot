@@ -64,7 +64,17 @@ npx serve dist                 # 本机预览
 # 或直接把 dist/ 丢进 nginx / Caddy / GitHub Pages / Cloudflare Pages
 ```
 
-构建使用相对路径 base，放在子目录（例如 `https://user.github.io/OpenReboot/`）无需改代码。
+构建使用相对路径 base，放在子目录（例如 `https://user.github.com/xxx/OpenReboot/`）无需改代码。
+
+**手上只有 zip 包、不想装 Node** 的话：
+
+```bash
+python3 tools/serve-dist.py        # 起在 http://127.0.0.1:4173/
+```
+
+一条注意：**别直接双击 `dist/index.html`。** 产物是 ES 模块 + Service Worker，
+`file://` 下模块脚本会被浏览器按跨源拦掉，SW 也不在非安全上下文注册 —— 必须走 http(s)。
+`localhost` 属于安全上下文，所以本机这样跑离线与安装都正常；对外托管请上 TLS。
 
 ### 装成 App
 
