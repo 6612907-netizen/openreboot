@@ -21,9 +21,11 @@ export function Aware({ repo, readiness, onDone }: { repo: Repo; readiness: Fric
   if (step === "welcome")
     return (
       <section>
-        <h1>{copy.welcome.lines.map((l) => l).join("\n")}</h1>
+        {/* §5.1 的文案只渲染一次：标题取首句，其余进正文。
+            之前 h1 和正文各放一遍整段，屏幕上重复两遍，读屏也会念两遍。 */}
+        <h1>{copy.welcome.lines[0]}</h1>
         <div className="muted" style={{ whiteSpace: "pre-line", marginBottom: 22 }}>
-          {copy.welcome.lines.join("\n")}
+          {copy.welcome.lines.slice(1).join("\n")}
         </div>
         <button className="primary" onClick={() => setStep("scan")}>
           {copy.welcome.cta}

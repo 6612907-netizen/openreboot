@@ -6,7 +6,7 @@
 // 仍然退 0。所以这里显式断言"真的跑到了东西"，三处都不许静默通过：
 //   1) 测试文件数 > 0        2) 实际执行的用例数 > 0        3) 构建产物非空
 import { spawnSync } from "node:child_process";
-import { existsSync, readdirSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, mkdirSync, rmSync } from "node:fs";
 import { join } from "node:path";
 
 const ROOT = new URL("..", import.meta.url).pathname.replace(/\/$/, "");
@@ -31,16 +31,25 @@ const testFiles = readdirSync(testDir, { recursive: true })
 if (testFiles.length === 0) fail(`tests/ 里没有任何 *.test.ts —— 无测试不等于通过（发现 ${testFiles.length} 个）`);
 say(`测试文件：${testFiles.length} 个`);
 
+// 磁盘上的测试文件数必须和配置里 include 的模式对得上：
+// 若 include 只写 *.test.ts，界面测试会被静默排除，"全绿"就成了假话。
+const cfg = readFileSync(join(ROOT, "vite.config.ts"), "utf8");
+const includeLine = cfg.match(/include:\s*\[([^\]]*)\]/)?.[1] ?? "";
+const coversTsx = includeLine.includes("tsx") || includeLine.includes("test.{ts,tsx}");
+const hasTsxFiles = testFiles.some((f) => f.endsWith(".tsx"));
+if (hasTsxFiles && !coversTsx) fail("存在 .tsx 界面测试，但 vitest include 不收它们 —— 会静默漏测");
+
 // ---- 1) 类型门 ----
 if (run("npx", ["tsc", "--noEmit"]) !== 0) fail("typecheck 未通过");
 
 // ---- 2) 测试门（取 JSON 读数，不靠终端回显）----
-process.mkdirSync?.(join(ROOT, ".gate"), { recursive: true });
-import("node:fs").then(({ mkdirSync }) => mkdirSync(join(ROOT, ".gate"), { recursive: true }));
+const reportPath = join(ROOT, ".gate", "vitest.json");
+mkdirSync(join(ROOT, ".gate"), { recursive: true });
+// 先删陈旧报告：类型门失败时测试根本没跑，留着上一轮的 JSON 会被误读成"本轮全绿"
+rmSync(reportPath, { force: true });
 if (run("npx", ["vitest", "run", "--reporter=json", "--outputFile=.gate/vitest.json"]) !== 0)
   fail("测试未通过");
 
-const reportPath = join(ROOT, ".gate", "vitest.json");
 if (!existsSync(reportPath)) fail("vitest 未产出 JSON 报告 —— 无法证明跑过测试");
 const report = JSON.parse(readFileSync(reportPath, "utf8"));
 const total = report.numTotalTests ?? 0;

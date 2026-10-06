@@ -13,7 +13,9 @@ export default defineConfig({
   },
   test: {
     environment: "node",
-    include: ["tests/**/*.test.ts"],
+    // 必须同时收 .ts 与 .tsx：只写 *.test.ts 会把界面测试静默排除在外，
+    // 于是"全绿"里根本没有包含 UI 那部分 —— 正是本项目明令禁止的空集判绿形状。
+    include: ["tests/**/*.test.{ts,tsx}"],
     globals: false,
   },
 });

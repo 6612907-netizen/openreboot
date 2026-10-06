@@ -66,6 +66,12 @@ export function ListField({
   );
 }
 
+/**
+ * 选项组。选框的状态变化只由 input 的 change 驱动，label 上**不挂** onClick：
+ * label 包住控件时，点文字会让浏览器（和 jsdom）再向 input 转发一次 click，
+ * 挂在 label 上的处理器就会被叫两遍——多选是「选中又取消」，看上去点了没反应。
+ * UI 冒烟测试第一次真点击时就撞出了这个缺陷。
+ */
 export function Choice({
   options,
   value,
@@ -84,11 +90,11 @@ export function Choice({
       {options.map((o) => {
         const on = multi ? selected.includes(o.value) : value === o.value;
         return (
-          <label key={o.value} className={on ? "on" : ""} onClick={() => onChange(o.value)}>
+          <label key={o.value} className={on ? "on" : ""}>
             <input
               type={multi ? "checkbox" : "radio"}
               checked={on}
-              readOnly
+              onChange={() => onChange(o.value)}
               style={{ accentColor: "var(--accent)", marginTop: 5 }}
             />
             <span>

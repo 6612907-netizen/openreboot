@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { copy } from "../i18n/copy";
 import { Card, Field, t } from "./parts";
-import { idbStore } from "../storage/db";
+import { idbStore, type KvStore } from "../storage/db";
 import { createRepository, GateError, type Repo } from "../storage/repository";
 import type { Database } from "../domain/types";
 import { stageCode } from "../domain/stages";
@@ -11,8 +11,9 @@ import { ClosedOutcome, Decide } from "./Decide";
 import { Reboot, Train } from "./Train";
 import { Graduate, Internalize, Settings } from "./Later";
 
-export function App() {
-  const repo = useMemo<Repo>(() => createRepository(idbStore()), []);
+/** store 可注入：测试用内存库跑真界面，产品代码不为测试特化。 */
+export function App({ store }: { store?: KvStore } = {}) {
+  const repo = useMemo<Repo>(() => createRepository(store ?? idbStore()), [store]);
   const [db, setDb] = useState<Database | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [view, setView] = useState<"app" | "settings">("app");
@@ -48,7 +49,9 @@ export function App() {
       <header className="top">
         <span className="brand">{copy.app.name}</span>
         <span className="stages">
-          {change ? t(copy.common.stageOf, { n: stage + 1 }) : "AWARE"} · {stageCode(stage as 0)}
+          {/* 没有 Change 时 stage 就是 0：这里曾把「AWARE」写两遍（硬编码字面 · stageCode(0)）。
+              阶段名一律取自 stageCode，界面不自己造字面文案。 */}
+          {t(copy.common.stageOf, { n: stage + 1 })} · {stageCode(stage as 0)}
         </span>
       </header>
 
