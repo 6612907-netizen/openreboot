@@ -16,11 +16,16 @@ import os
 import socketserver
 import sys
 
-root = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "dist")
+here = os.path.dirname(os.path.abspath(__file__))
 port = int(sys.argv[1]) if len(sys.argv) > 1 else 4173
 
-if not os.path.isfile(os.path.join(root, "index.html")):
-    sys.exit(f"找不到 {root}/index.html —— 先跑 npm run build")
+# 两种落点：仓库里（tools/，产物在 ../dist）与发布包里（和 dist/ 同级）。
+# 只算一种会在另一种布局下指着不存在的目录 —— 实测过：从解压出来的包里跑，
+# 它去找 <包父目录>/dist，直接报「找不到 index.html」。
+cands = [os.path.join(here, "dist"), os.path.join(os.path.dirname(here), "dist")]
+root = next((c for c in cands if os.path.isfile(os.path.join(c, "index.html"))), None)
+if root is None:
+    sys.exit(f"找不到 dist/index.html（试过的路径：{', '.join(cands)}）—— 先跑 npm run build")
 
 # directory= 必须显式给。早先只算出 root 没传进去，handler 实际服务的是当前工作目录，
 # 于是仓库根那份 dev 版 index.html 被当成产物端出来（/ 返回 200，但 /sw.js 404）。
