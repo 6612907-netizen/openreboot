@@ -163,12 +163,16 @@ describe('导入旧导出文件：三种出口的旧名字要认，认不出就�
       audit: null, decision: { kind: "yolo", madeAt: "", note: "" }, lessons: [], plan: null,
       reps: [], interruptions: [], supervision: "high", supervisionHistory: [], graduation: null }]);
     await expect(repo.importJson(evil)).rejects.toThrow(/认不出的决定类型/);
-    expect(await repo.exportJson()).toBe(before);
+    // 只比数据：导出文件里的 exportedAt 每次都不同，比整份字符串会变成一条时快时慢的测试
+    const dataOf = (t: string) => JSON.stringify((JSON.parse(t) as { data: unknown }).data);
+    expect(dataOf(await repo.exportJson())).toBe(dataOf(before));
   });
 });
 
 describe("数据所有权（本地优先的落地要求）", () => {
-  it("导出→清空→导入 逐字节等价", async () => {
+  // 比的是**数据**逐字节等价，不是整份导出文件：导出头部有 exportedAt 时间戳，
+  // 拿整份字符串比会随机器快慢忽绿忽红 —— CI 上就是这么红过一次给我的教训。
+  it("导出→清空→导入 数据逐字节等价", async () => {
     await repo.saveReady(scan);
     const c = await repo.createChange("稳定写作");
     await repo.logRep(c.id, { date: "2026-10-01", outcome: "done", actualMinutes: 25, evidenceNote: "写完一段" });
@@ -178,10 +182,14 @@ describe("数据所有权（本地优先的落地要求）", () => {
     expect((await repo.load()).changes).toHaveLength(0);
 
     await repo.importJson(dump);
-    const back = await repo.load();
-    expect(back.changes[0]!.title).toBe("稳定写作");
-    expect(back.changes[0]!.reps[0]!.actualMinutes).toBe(25);
-    expect(back.profile.readiness?.primaryArea).toBe("learning");
+    const back = await repo.exportJson();
+    const dataOf = (t: string) => JSON.stringify((JSON.parse(t) as { data: unknown }).data);
+    expect(dataOf(back)).toBe(dataOf(dump));
+    // 上一行已经涵盖，这里保留三条点名的读数，失败时能一眼看出是哪块丢的
+    const loaded = await repo.load();
+    expect(loaded.changes[0]!.title).toBe("稳定写作");
+    expect(loaded.changes[0]!.reps[0]!.actualMinutes).toBe(25);
+    expect(loaded.profile.readiness?.primaryArea).toBe("learning");
   });
   it("拒绝非本应用的导入文件", async () => {
     await expect(repo.importJson(JSON.stringify({ foo: 1 }))).rejects.toThrow(/不是 OpenReboot 导出文件/);
