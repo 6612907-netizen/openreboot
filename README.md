@@ -1,5 +1,7 @@
 # OpenReboot
 
+[![CI](https://github.com/6612907-netizen/openreboot/actions/workflows/ci.yml/badge.svg)](https://github.com/6612907-netizen/openreboot/actions/workflows/ci.yml)
+
 > **Our goal is not to maximize engagement.**
 > **Our goal is to make OpenReboot progressively unnecessary.**
 
@@ -46,6 +48,9 @@
 ---
 
 ## 快速开始
+
+跑测试与构建需要 **Node 24+**（CI 实测 24 与 26 两档跑绿；Node 20 跑不动界面冒烟测试，原因见 CONTRIBUTING）。
+只想用软件的人不需要 Node —— 直接下 Release 里的 zip，按 `README.txt` 一行命令打开。
 
 ```bash
 npm install

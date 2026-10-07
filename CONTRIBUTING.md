@@ -2,7 +2,10 @@
 
 ## 环境
 
-Node 20+（开发用 26）。只有两类依赖：运行时 `react` / `react-dom`，其余是构建与测试工具。
+Node 24+。CI 实测跑绿的是 24 与 26 两档；本机开发用 26。
+**别用 Node 20 跑测试**：界面冒烟那枚文件会整枚静默消失 —— jsdom 26 依赖的 undici
+需要较新的 Node API，撞出 `webidl.util.markAsUncloneable is not a function`，
+其余文件照样全绿，只剩一条 unhandled error。这个坑我们在 CI 上踩了一次才看清。只有两类依赖：运行时 `react` / `react-dom`，其余是构建与测试工具。
 **加新依赖要先在 PR 里说明理由** —— 这个项目的一半价值在于它轻。
 
 ```bash
