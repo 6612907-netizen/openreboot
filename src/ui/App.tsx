@@ -7,7 +7,7 @@ import type { Database } from "../domain/types";
 import { stageCode } from "../domain/stages";
 import { Aware } from "./Aware";
 import { Understand } from "./Understand";
-import { ClosedOutcome, Decide } from "./Decide";
+import { Decide } from "./Decide";
 import { Reboot, Train } from "./Train";
 import { Graduate, Internalize, Settings } from "./Later";
 
@@ -43,6 +43,9 @@ export function App({ store }: { store?: KvStore } = {}) {
   const change = repo.activeChange(db);
   const readiness = db.profile.readiness;
   const stage = change?.stage ?? 0;
+  // 归档过的判断仍然留在本机；新建页要说一句"上一条去哪了"，
+  // 否则用户会以为选了「暂时不改变」之后数据被应用吞掉了。
+  const hasArchived = db.changes.some((c) => c.status === "closed" && !!c.decision);
 
   return (
     <div className="wrap">
@@ -65,6 +68,7 @@ export function App({ store }: { store?: KvStore } = {}) {
         <section>
           <h1>{copy.audit.title}</h1>
           <p className="muted">{copy.app.tagline}</p>
+          {hasArchived ? <p className="muted">{copy.decide.archived}</p> : null}
           <Card>
             <Field label={copy.audit.fields.desiredChange.label} value={title} onChange={setTitle} placeholder={copy.audit.fields.desiredChange.hint} />
             <button
@@ -76,8 +80,6 @@ export function App({ store }: { store?: KvStore } = {}) {
             </button>
           </Card>
         </section>
-      ) : change.decision && change.decision.kind !== "commit" ? (
-        <ClosedOutcome change={change} />
       ) : stage === 1 ? (
         <Understand repo={repo} change={change} onDone={() => void refresh()} />
       ) : stage === 2 ? (

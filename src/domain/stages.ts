@@ -19,8 +19,8 @@ export const stageCode = (n: StageIndex) => STAGE_CODES[n];
 export const readinessComplete = (r: FrictionScan | null): boolean =>
   !!r && Object.keys(r.answers).length > 0 && !!r.primaryArea;
 
-/** 进入 Stage 03 之前必须存在的决定；§2.1：notNow / stayAsIs 都是合法出口。 */
-export const hasCommitment = (c: Change): boolean => c.decision?.kind === "commit";
+/** 进入 Stage 03 之前必须存在的决定；Baseline §2.1：observe / keep 都是合法出口。 */
+export const hasCommitment = (c: Change): boolean => c.decision?.kind === "change";
 
 export const lessonsRequired = 4;
 

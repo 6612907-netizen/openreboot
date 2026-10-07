@@ -93,3 +93,107 @@ describe("§5→§7 走完检查才允许创建 Change", () => {
     expect(group().getByText("关系").closest("label")?.className).toBe("on");
   });
 });
+
+/** 选一个领域 + 定主领域 + 继续 ⇒ 进入建 Change 屏 */
+const finishAreas = async () => {
+  await screen.findByText("主要摩擦领域");
+  const group = () => within(document.querySelectorAll<HTMLElement>(".choices")[0]!);
+  fireEvent.click(group().getByText("学习"));
+  const all = screen.getAllByText("学习");
+  fireEvent.click(all[all.length - 1]!);
+  await waitFor(() => expect((screen.getByRole("button", { name: "继续" }) as HTMLButtonElement).disabled).toBe(false));
+  fireEvent.click(screen.getByRole("button", { name: "继续" }));
+  expect(await screen.findByText("表面目标")).toBeTruthy();
+};
+
+/** 建 Change ⇒ 落在 UNDERSTAND */
+const createChange = async () => {
+  fireEvent.change(screen.getByRole("textbox"), { target: { value: "我想稳定写作" } });
+  fireEvent.click(screen.getByRole("button", { name: "继续" }));
+  expect(await screen.findByText(/为什么知道不等于做到/)).toBeTruthy();
+};
+
+/**
+ * 把四段微型课写完（每段翻到最后一张卡，写一句话保存），结束时已在 DECIDE。
+ * 每点一次保存都要等"页码计数器"真的翻页了再走下一轮：submit 里是 await 服务层，
+ * 同步 getByRole 会读到还没更新的界面 —— 这正是我第一版踩的（假失败）。
+ */
+/** 读"已落库的段落数"：这是要证明的事本身，比读页面上的计数器字样可靠。 */
+const lessonCount = () => {
+  const db = store.peek() as { changes?: { lessons?: unknown[] }[] } | null;
+  return db?.changes?.[0]?.lessons?.length ?? 0;
+};
+
+const finishLessons = async () => {
+  for (let i = 1; i <= 4; i++) {
+    for (let c = 0; c < 8; c++) {
+      const next = screen.queryByRole("button", { name: "下一段" });
+      if (!next) break;
+      fireEvent.click(next);
+    }
+    const box = await screen.findByPlaceholderText("用你自己的话写一句。");
+    fireEvent.change(box, { target: { value: "我卡在这一步" } });
+    fireEvent.click(await screen.findByRole("button", { name: "保存" }));
+    // 等的是**落库计数**，不是页面上的 "n / 4" 字样：计数器那几个字符被拆在多个节点里，
+    // 按文案正则等会假失败；而"这一段的回答确实写进本机库了"才是要证明的事。
+    await waitFor(() => expect(lessonCount()).toBe(i));
+  }
+  await screen.findByText("现在，你来决定");
+};
+
+const auditSaved = () => {
+  const db = store.peek() as { changes?: { audit?: unknown }[] } | null;
+  return !!db?.changes?.[0]?.audit;
+};
+
+const walkToDecide = async () => {
+  await ready();
+  fireEvent.click(screen.getByRole("button", { name: "开始检查" }));
+  await answerAll();
+  await finishAreas();
+  await createChange();
+  await finishLessons();
+};
+
+describe("Baseline §1：没走完 AWARE→UNDERSTAND→DECIDE 就不会被推进到「我要改变」", () => {
+  it("首屏 / 检查屏 / 新建屏 / UNDERSTAND 都没有 DECIDE 的三个出口", async () => {
+    await ready();
+    expect(screen.queryByText("我决定改变")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "开始检查" }));
+    await answerAll();
+    await finishAreas();
+    expect(screen.queryByText("我决定改变")).toBeNull();
+    await createChange();
+    expect(screen.queryByText("我决定改变")).toBeNull();
+  });
+});
+
+describe("Baseline §3：observe / keep 是活路，不是死路", () => {
+  it("选「还没想清楚，继续观察」后仍留在 DECIDE，能自己归档，名额才放开", async () => {
+    await walkToDecide();
+
+    fireEvent.click(screen.getByText("还没想清楚，继续观察"));
+    expect(await screen.findByText("这条判断已经记在本机了")).toBeTruthy();
+    expect(document.querySelector(".stages")?.textContent).toContain("DECIDE");
+    expect(screen.queryByText(/设计一个实验/)).toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: "这次就到这里，归档它" }));
+    expect(await screen.findByText(/上一条已经归档/)).toBeTruthy();
+    expect(screen.queryByText("我决定改变")).toBeNull();
+    const saved = store.peek() as { changes: { status: string; decision: { kind: string } | null }[] };
+    expect(saved.changes[0]?.status).toBe("closed");
+    expect(saved.changes[0]?.decision?.kind).toBe("observe");
+  });
+
+  it("想改主意：在 DECIDE 上直接重选「我决定改变」，不需要重建", async () => {
+    await walkToDecide();
+    fireEvent.click(screen.getByText("想清楚了，暂时不改变"));
+    expect(await screen.findByText("这条判断已经记在本机了")).toBeTruthy();
+    // 进 REBOOT 还要先把审计表存下来（gate.audit），所以这里走真实填写路径
+    fireEvent.click(screen.getByRole("button", { name: "保存" }));
+    await waitFor(() => expect(auditSaved()).toBe(true));
+    fireEvent.click(screen.getByText("我决定改变"));
+    expect(await screen.findByText(/设计一个实验/)).toBeTruthy();
+    expect(document.querySelector(".stages")?.textContent).toContain("REBOOT");
+  });
+});

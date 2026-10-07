@@ -37,13 +37,37 @@ describe("§3 同时只能有一个进行中的改变", () => {
     await repo.createChange("第一个");
     await expect(repo.createChange("第二个")).rejects.toThrow(/只有一个进行中的改变/);
   });
-  it("前一个决定「保持现状」归档后，可以开新的", async () => {
+  // Baseline §02 定稿后改的判据：observe / keep 不再"顺手替用户归档"。
+  // 旧断言是"选了就等于结束、名额立刻释放"，那等于把「继续观察」做成一条死路 ——
+  // 用户既回不到这条判断，也不知道自己的理由去了哪。现在必须他自己按「归档」。
+  it("选「暂时不改变」之后这条仍然 active，也不会被偷偷推进", async () => {
     await repo.saveReady(scan);
     const a = await repo.createChange("第一个");
-    await repo.setDecision(a.id, { kind: "stayAsIs", note: "想清楚了，暂不做" });
+    await repo.setDecision(a.id, { kind: "keep", note: "想清楚了，暂不做" });
+    const after = repo.activeChange(await repo.load());
+    expect(after?.id).toBe(a.id);
+    expect(after?.status).toBe("active");
+    expect(after?.stage).toBe(1); // 没被推进；等他走到 DECIDE 后仍可重新选一个出口
+    expect(repo.activeChange(await repo.load())?.decision?.kind).toBe("keep");
+  });
+
+  it("由用户自己归档之后，才可以开新的 Active Change", async () => {
+    await repo.saveReady(scan);
+    const a = await repo.createChange("第一个");
+    await repo.setDecision(a.id, { kind: "observe", note: "再看看" });
+    await expect(repo.createChange("第二个")).rejects.toThrow(/只有一个进行中的改变/);
+    const closed = await repo.archiveChange(a.id);
+    expect(closed.status).toBe("closed");
     expect(repo.activeChange(await repo.load())).toBeNull();
     const b = await repo.createChange("第二个");
     expect(b.id).not.toBe(a.id);
+  });
+
+  it("已经决定改变的那条不许被归档（归档只服务 observe / keep）", async () => {
+    await repo.saveReady(scan);
+    const a = await repo.createChange("第一个");
+    await repo.setDecision(a.id, { kind: "change", note: "做" });
+    await expect(repo.archiveChange(a.id)).rejects.toThrow(/不归档/);
   });
 });
 
@@ -104,9 +128,42 @@ describe("阶段推进的服务层把关", () => {
     for (const l of ["lesson-01", "lesson-02", "lesson-03", "lesson-04"]) await repo.addLessonAnswer(c.id, l, "写过了");
     await repo.advance(c.id, 2);
     await repo.setAudit(c.id, { desiredChange: "稳定写作", intrinsicReasons: ["自己想写"] });
-    await repo.setDecision(c.id, { kind: "commit", note: "试试" });
+    await repo.setDecision(c.id, { kind: "change", note: "试试" });
     const next = await repo.advance(c.id, 3);
     expect(next.stage).toBe(3);
+  });
+});
+
+describe('导入旧导出文件：三种出口的旧名字要认，认不出就整份拒绝', () => {
+  const wrap = (changes: unknown[]) =>
+    JSON.stringify({ app: "OpenReboot", schemaVersion: 1, data: { profile: { createdAt: "", updatedAt: "", readiness: scan }, changes } });
+
+  it("v0.1.0 的 commit / notNow / stayAsIs 翻译成 change / observe / keep", async () => {
+    const legacy = [
+      { kind: "commit", want: "change" },
+      { kind: "notNow", want: "observe" },
+      { kind: "stayAsIs", want: "keep" },
+    ];
+    for (const { kind, want } of legacy) {
+      const fresh = createRepository(memoryStore());
+      await fresh.importJson(
+        wrap([{ id: "c1", title: "t", stage: 1, status: "active", createdAt: "", updatedAt: "",
+                audit: null, decision: { kind, madeAt: "", note: "" }, lessons: [], plan: null,
+                reps: [], interruptions: [], supervision: "high", supervisionHistory: [], graduation: null }]),
+      );
+      const db = await fresh.load();
+      expect(db.changes[0]?.decision?.kind, `旧值 ${kind}`).toBe(want);
+    }
+  });
+
+  it("认不出的决定类型：拒绝导入，且不动现有数据", async () => {
+    await repo.saveReady(scan);
+    const before = await repo.exportJson();
+    const evil = wrap([{ id: "c9", title: "t", stage: 1, status: "active", createdAt: "", updatedAt: "",
+      audit: null, decision: { kind: "yolo", madeAt: "", note: "" }, lessons: [], plan: null,
+      reps: [], interruptions: [], supervision: "high", supervisionHistory: [], graduation: null }]);
+    await expect(repo.importJson(evil)).rejects.toThrow(/认不出的决定类型/);
+    expect(await repo.exportJson()).toBe(before);
   });
 });
 

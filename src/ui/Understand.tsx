@@ -17,10 +17,12 @@ export function Understand({ repo, change, onDone }: { repo: Repo; change: Chang
     await repo.addLessonAnswer(change.id, lesson.id, answer.trim());
     setCard(0);
     setAnswer("");
-    if (idx + 1 >= LESSONS.length) {
-      await repo.advance(change.id, 2);
-      onDone();
-    }
+    if (idx + 1 >= LESSONS.length) await repo.advance(change.id, 2);
+    // 每写一段都要刷一次：idx 是从 props 里的 change.lessons 现算的，
+    // 不刷新就永远停在 lesson-01 —— 用户写完第一段发现页面不动，
+    // 再点保存就把同一段覆盖掉。这个缺陷是靠"刷新后 idx 才对"的取数路径掩盖的，
+    // 之前的冒烟测试只走到 UNDERSTAND 就重开页面，所以没暴露。
+    onDone();
   };
 
   const done = lesson.cards[card]!;
@@ -35,11 +37,6 @@ export function Understand({ repo, change, onDone }: { repo: Repo; change: Chang
       <Card>
         <div style={{ whiteSpace: "pre-line" }}>{done}</div>
       </Card>
-      {lesson.source === "drafted" ? (
-        <div className="muted" style={{ fontSize: 12 }}>
-          注：这一段是规范原文缺失处的起草稿，见 README「已知缺口」。
-        </div>
-      ) : null}
       <div className="row" style={{ marginTop: 14 }}>
         {card > 0 ? (
           <button className="ghost" onClick={() => setCard(card - 1)}>

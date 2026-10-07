@@ -67,7 +67,13 @@ export interface ChangeAudit {
 }
 
 /** §2.1 三种决定都通向合法结局；只有 commit 才继续往后走。 */
-export type DecisionKind = "commit" | "notNow" | "stayAsIs";
+/**
+ * DECIDE 的三个合法出口（v0.1 Baseline Spec §02）。
+ * 名字就是判据：`change` 才往下走训练，另外两个不是失败、也不是退出系统，
+ * 而是"当下不改变 / 继续观察"——两者都允许用户日后回到这里重新决定。
+ * 旧导出文件里的 commit / notNow / stayAsIs 由服务层显式翻译，不静默接受未知值。
+ */
+export type DecisionKind = "change" | "observe" | "keep";
 export interface Decision {
   kind: DecisionKind;
   madeAt: string;

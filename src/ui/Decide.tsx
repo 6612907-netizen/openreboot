@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { copy } from "../i18n/copy";
-import { Card, Field, ListField } from "./parts";
+import { Card, Choice, Field, ListField } from "./parts";
 import { reviewAudit } from "../domain/evidence";
-import type { Change, ChangeAudit } from "../domain/types";
+import type { Change, ChangeAudit, DecisionKind } from "../domain/types";
 import type { Repo } from "../storage/repository";
 
 const EMPTY: ChangeAudit = {
@@ -20,19 +20,37 @@ const EMPTY: ChangeAudit = {
 export function Decide({ repo, change, onDone }: { repo: Repo; change: Change; onDone: () => void }) {
   const [a, setA] = useState<ChangeAudit>(change.audit ?? { ...EMPTY, desiredChange: change.title });
   const [note, setNote] = useState(change.decision?.note ?? "");
+  const [err, setErr] = useState<string | null>(null);
   const set = (patch: Partial<ChangeAudit>) => setA((p) => ({ ...p, ...patch }));
   const findings = reviewAudit(a);
 
-  const saveAudit = async () => {
-    await repo.setAudit(change.id, a);
+  // Baseline §02：observe / keep 记下来之后，这条 Change 仍然留在 DECIDE，
+  // 页面上要说清"你选的是哪一个"，并给一条明确的归档出口（由用户自己按）。
+  const held = change.decision && change.decision.kind !== "change" ? change.decision : null;
+  const heldLabel = held ? (copy.decide.options.find((o) => o.value === held.kind)?.label ?? null) : null;
+
+  const archive = async () => {
+    setErr(null);
+    try {
+      await repo.archiveChange(change.id);
+      onDone();
+    } catch (e) {
+      setErr((e as Error).message);
+    }
   };
 
-  const decide = async (kind: "commit" | "notNow" | "stayAsIs") => {
+  const saveAudit = async () => {
+    await repo.setAudit(change.id, a);
+    // 同 Understand 那一处：写完要刷一次，否则界面里的 change 还是旧的（audit 看着像没存上）。
+    onDone();
+  };
+
+  const decide = async (kind: DecisionKind) => {
     await repo.setDecision(change.id, { kind, note });
-    if (kind === "commit") {
+    if (kind === "change") {
       await repo.advance(change.id, 3);
-      onDone();
     }
+    onDone();
   };
 
   const f = copy.audit.fields;
@@ -88,27 +106,29 @@ export function Decide({ repo, change, onDone }: { repo: Repo; change: Change; o
       <h2>{copy.decide.title}</h2>
       <p className="muted">{copy.decide.intro}</p>
       <Field label={copy.decide.noteLabel} value={note} onChange={setNote} />
-      <div className="choices">
-        {copy.decide.options.map((o) => (
-          <label key={o.value} onClick={() => decide(o.value as "commit")}>
-            <span>
-              <strong>{o.label}</strong>
-              <div className="muted">{o.hint}</div>
-            </span>
-          </label>
-        ))}
-      </div>
-    </section>
-  );
-}
 
-/** 决定之后但尚未承诺时的静态收尾页。 */
-export function ClosedOutcome({ change }: { change: Change }) {
-  return (
-    <section>
-      <h1>{copy.decide.title}</h1>
-      <Card>{copy.decide.notCommitClosed}</Card>
-      <div className="muted">{change.decision?.note || ""}</div>
+      {err ? <Card tone="err">{err}</Card> : null}
+
+      {heldLabel ? (
+        <Card>
+          <strong>{copy.decide.heldTitle}</strong>
+          <div>{heldLabel}</div>
+          {change.decision?.note ? <div className="muted">{change.decision.note}</div> : null}
+          <div className="muted">{copy.decide.redecideHint}</div>
+          <div className="row" style={{ marginTop: 10 }}>
+            <button className="ghost" onClick={() => void archive()}>
+              {copy.decide.archive}
+            </button>
+          </div>
+        </Card>
+      ) : null}
+
+      {/* 出口用同一个 Choice：它的选中态由 input 驱动，点文字不会像早先那样"选了又取消"。 */}
+      <Choice
+        value={change.decision?.kind ?? undefined}
+        options={copy.decide.options.map((o) => ({ value: o.value, label: o.label, hint: o.hint }))}
+        onChange={(v) => void decide(v as DecisionKind)}
+      />
     </section>
   );
 }

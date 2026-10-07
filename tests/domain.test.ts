@@ -59,8 +59,8 @@ describe("§2.1 决定：没有承诺就不许进入设计阶段", () => {
   it("缺决定 ⇒ gate.commit", () => {
     expect(canEnter(baseChange({ stage: 2 }), 3, scan(7)).reason).toBe("gate.commit");
   });
-  it("选「保持现状」不打开后续阶段，但也不报错", () => {
-    const c = baseChange({ stage: 2, decision: { kind: "stayAsIs", madeAt: "", note: "" }, audit: { desiredChange: "x", desiredOutcome: [], intrinsicReasons: [], externalReasons: [], benefitsOfChange: [], costsOfChange: [], benefitsOfStatusQuo: [], costsOfStatusQuo: [] } });
+  it("选「暂时不改变」不打开后续阶段，但也不报错", () => {
+    const c = baseChange({ stage: 2, decision: { kind: "keep", madeAt: "", note: "" }, audit: { desiredChange: "x", desiredOutcome: [], intrinsicReasons: [], externalReasons: [], benefitsOfChange: [], costsOfChange: [], benefitsOfStatusQuo: [], costsOfStatusQuo: [] } });
     expect(canEnter(c, 3, scan(7)).reason).toBe("gate.commit");
   });
   it("课程没写满四段不许进 DECIDE", () => {

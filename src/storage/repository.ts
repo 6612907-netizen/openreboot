@@ -2,6 +2,7 @@ import type {
   Change,
   Database,
   Decision,
+  DecisionKind,
   DiagnosisFactor,
   FrictionScan,
   Interruption,
@@ -43,6 +44,8 @@ export interface Repo {
   activeChange(db: Database): Change | null;
   setAudit(id: string, patch: Partial<Change["audit"]>): Promise<Change>;
   setDecision(id: string, decision: Omit<Decision, "madeAt">): Promise<Change>;
+  /** 只有用户自己说"这次到这里"才归档；归档才让出唯一 Active Change 的名额。 */
+  archiveChange(id: string): Promise<Change>;
   addLessonAnswer(id: string, lessonId: string, answer: string): Promise<Change>;
   setPlan(id: string, plan: Omit<Plan, "createdAt">): Promise<Change>;
   logRep(id: string, input: { date: string; outcome: RepOutcome; actualMinutes: number; evidenceNote: string }): Promise<Rep>;
@@ -57,6 +60,30 @@ export interface Repo {
   erase(): Promise<void>;
   exportJson(): Promise<string>;
   importJson(text: string): Promise<Database>;
+}
+
+/**
+ * v0.1.0 发布时 DECIDE 的三个出口叫 commit / notNow / stayAsIs；
+ * Baseline 定稿后规范名是 change / observe / keep。已经写在用户机器上的旧导出文件仍要读得进来，
+ * 所以在这里显式翻译一次 —— 但**只翻译认识的旧值**：出现既不是新值也不是旧值的 kind，
+ * 直接拒绝整份导入，不静默收下（控制入口不许 fail-open）。
+ */
+const LEGACY_DECISION_KINDS: Record<string, DecisionKind> = {
+  commit: "change",
+  notNow: "observe",
+  stayAsIs: "keep",
+};
+const DECISION_KINDS: string[] = ["change", "observe", "keep"];
+
+function normalizeDecisions(db: Database): void {
+  for (const c of db.changes) {
+    const d = c.decision as { kind?: string } | null | undefined;
+    if (!d || typeof d.kind !== "string") continue;
+    if (DECISION_KINDS.includes(d.kind)) continue;
+    const mapped = LEGACY_DECISION_KINDS[d.kind];
+    if (!mapped) throw new Error(`导入文件里有一个认不出的决定类型「${d.kind}」，已拒绝导入，不改你的数据。`);
+    c.decision = { ...(c.decision as object), kind: mapped } as Change["decision"];
+  }
 }
 
 export function createRepository(store: KvStore): Repo {
@@ -148,8 +175,24 @@ export function createRepository(store: KvStore): Repo {
       await mutate((db) => {
         const c = findChange(db, id);
         c.decision = { ...decision, madeAt: nowIso() };
-        // §2.1：不改变 / 现在不是时候 都是合法终点 —— 直接归档，不留在 active。
-        if (decision.kind !== "commit") c.status = "closed";
+        // Baseline §02：observe / keep 是合法出口，但**不是归档**。
+        // 老代码在这里直接把 change 关成 closed，于是"继续观察"变成一条死路：
+        // 用户点了它之后，应用立刻把他当成"没有进行中的改变"，
+        // 既回不到这条判断，也看不到自己当初的理由。现在改变留在原地（仍在 DECIDE），
+        // 要么重新决定，要么由用户自己明确归档。
+        out = c;
+        touch(c);
+      });
+      return out;
+    },
+
+    async archiveChange(id) {
+      let out!: Change;
+      await mutate((db) => {
+        const c = findChange(db, id);
+        if (!c.decision) throw new GateError("gate.commit");
+        if (c.decision.kind === "change") throw new Error("已决定改变的改动不归档，请暂停或完成它");
+        c.status = "closed";
         out = c;
         touch(c);
       });
@@ -336,6 +379,7 @@ export function createRepository(store: KvStore): Repo {
       if (parsed.schemaVersion !== SCHEMA_VERSION) {
         throw new Error(`文件版本 ${String(parsed.schemaVersion)} 与当前 ${SCHEMA_VERSION} 不匹配，暂不自动迁移。`);
       }
+      normalizeDecisions(parsed.data);
       await store.put(parsed.data);
       return parsed.data;
     },

@@ -11,7 +11,7 @@ export const copy = {
     name: "OpenReboot",
     tagline: "先判断要不要改变，再谈怎么改变。",
     offlineReady: "本机数据已就绪，离线可用。",
-    privacyNote: "所有内容只保存在这台设备上。没有账号，没有服务器，没有遥测。",
+    privacyNote: "训练数据默认只存在这台设备的浏览器里。应用本身没有账号、没有后端、没有遥测；在线演示由 GitHub Pages 托管，它可能按自己的政策记录正常访问日志。",
   },
 
   welcome: {
@@ -112,29 +112,36 @@ export const copy = {
     next: "下一段",
   },
 
-  /** §2.1 三种结局都合法 */
+  /**
+   * §02 DECIDE —— v0.1 Baseline Spec 的三个合法出口。
+   * observe / keep 都不是终点：用户可以回来重新选，也可以自己按「归档」。
+   * 中文串里的引号一律用全角，避免和字符串定界符打架。
+   */
   decide: {
     title: "现在，你来决定",
-    intro: "看完上面这些，你有三个合法出口。选“暂不改变”或“保持现状”都不算退出系统。",
+    intro: "看完上面这些，你有三个合法出口。选「继续观察」或「暂时不改变」都不算退出系统，也不算没做到。",
     options: [
       {
-        value: "commit",
+        value: "change",
         label: "我决定改变",
         hint: "接下来一起把方向变成能做的实验。",
       },
       {
-        value: "notNow",
-        label: "现在不是时候",
-        hint: "留着这份判断，改天回来看。",
+        value: "observe",
+        label: "还没想清楚，继续观察",
+        hint: "这份判断留在本机，想看回来随时回来看。",
       },
       {
-        value: "stayAsIs",
-        label: "我选择保持现状",
-        hint: "这也是想清楚之后的结论。",
+        value: "keep",
+        label: "想清楚了，暂时不改变",
+        hint: "这也是把收益与代价都摆过之后的结论。",
       },
     ],
     noteLabel: "给你自己留一句话",
-    notCommitClosed: "你已经做出了决定，这次到这里就够了。数据留在本机，随时可以回看。",
+    heldTitle: "这条判断已经记在本机了",
+    redecideHint: "想改主意，直接在下面重新选一个出口就行；这条记录不会被清掉。",
+    archive: "这次就到这里，归档它",
+    archived: "上一条已经归档。它的记录还在本机，设置 → 数据 可以导出回看。",
   },
 
   /** Stage 03 REBOOT —— 把方向变成最小实验 */
