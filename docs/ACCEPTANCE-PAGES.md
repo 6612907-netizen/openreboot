@@ -3,10 +3,12 @@
 对最终 HTTPS 地址跑的真浏览器验收，不是 localhost、不是 jsdom。
 
 - 地址：<https://6612907-netizen.github.io/openreboot/>
-- 被验收的 commit：`9522b9778cf01e421e43f04c56a36aa4787a24a8`
-- 部署：GitHub Actions `Pages` 工作流 run `37572142877`（success），
-  其中 gate 作业跑的就是 `npm run gate`；deploy 作业不跑任何 npm 代码，只搬 gate 放行那份产物。
-  同一 commit 的 `CI` run `37572143082`（success，Node 24 与 26 两档）。
+- 被验收的 commit：`42a7c30`（也就是 `v0.1.1` 指向的那一笔）。
+  对最终 HTTPS 地址跑过两遍：首次部署在 `9522b97`（Pages run `37572142877`、CI run `37572143082`），
+  README/CHANGELOG 那笔纯文档改动部署到 `42a7c30`（Pages run `37572608592`、CI run `37572608535`）后再跑一遍，
+  **两遍读数一致：26 PASS / 0 红 / 1 量不到**。文档不进 dist，产物哈希未变。
+- 部署链：`Pages` 工作流的 gate 作业跑 `npm run gate`；deploy 作业 `needs: gate`，
+  不跑任何 npm 代码，只把 gate 放行的那份产物上传部署。
 - 复跑方法：
 
 ```bash
