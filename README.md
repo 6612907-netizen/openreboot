@@ -43,7 +43,8 @@
 | §9 不做人格判断 | 本地"矛盾检查"只输出**问句**，测试断言每条输出必须以问号结尾且不含人格词 |
 | Local-first | `tests/local-first.test.ts` 断言 `src/` 里没有任何 `fetch` / `XMLHttpRequest` / `sendBeacon` / `WebSocket`，运行时依赖只有 `react` + `react-dom`，`index.html` 不引外部脚本，Service Worker 不代理跨站请求、无后台同步与推送 |
 
-**没有账号，没有服务器，没有遥测。** 数据只存在浏览器的 IndexedDB 里，可以一键导出 JSON、导入、彻底清空。
+**应用本身没有账号系统、没有后端、没有遥测。** 训练数据默认只存在你这台设备的浏览器 IndexedDB 里，可以一键导出 JSON、导入、彻底清空。
+在线演示由 GitHub Pages 托管，平台可能按它自己的政策记录正常访问日志 —— 那是 Pages 的访问日志，不等于 OpenReboot 收集了你的训练数据。详见 [SECURITY.md](SECURITY.md)。
 
 ---
 
@@ -129,9 +130,9 @@ OpenReboot **不是**医疗、心理健康或诊断工具，不提供治疗、�
 
 v0.1 MVP。诚实列出没做到的：
 
-- **规范来源被截断**：本仓库依据的方案书在第 11 节（Lesson 01）中途结束。
-  Stage 01 的 Lesson 01 为原文照抄；Lesson 02–04 按 §2.3 / §2.4 / §2.5 自行起草，
-  源码里以 `source: "drafted"` 标注，等完整段落到位后应逐段替换。
+- **规范真源**：最初的方案书在第 11 节中途结束。2026-10-07 定稿：不再等后续原文，
+  把已确认的结构正式定为 [v0.1 Baseline Spec](docs/BASELINE.md)。Lesson 01 是原文照抄，
+  Lesson 02–04 与各阶段细节标为 `source: "product"`（产品决定，不是待验证的草稿）。
 - **§9 提到的 AI 辅助**目前是**纯本地确定性检查**（不联网、不调模型）。
   接真模型属于可选适配器，默认关闭 —— 一旦引入就会破坏上面的 Local-first 测试，需要单独讨论。
 - 多语言：目前只有中文文案层，英文待补。

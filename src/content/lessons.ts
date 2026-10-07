@@ -1,16 +1,14 @@
 /**
- * Stage 01 UNDERSTAND 的微型交互课程（方案书 §10-11）。
+ * Stage 01 UNDERSTAND 的微型交互课程。
  *
- * 诚实标注：**用户提供的方案书在第 11 节中途被截断**，只给了 Lesson 01 的题干、
- * 第一张图和半张链条图。因此：
- *   - lesson-01 的题干与「知道≠行动≠重复≠自动化」为**原文照抄**；
- *   - 链条「理解→愿意→知道怎么做→环境允许→开始→反馈」为原文，但原文在"反馈"处截断，
- *     后续环节未见，故此处只呈现到此为止，不做补全式臆造；
- *   - lesson-02 / 03 / 04 是我按 §2.3、§2.4、§2.5 的价值观**自行起草**的占位课程，
- *     等方案书完整段落到位后应逐段替换。每段都标了 source 字段以便区分。
+ * 出处标记得说清楚，因为它决定"这段能不能改"：
+ *   - "spec"：主理人给的方案书原文（Lesson 01 的题干与「知道≠行动≠重复≠自动化」）。
+ *     原文在链条「…→开始→反馈」处截断，所以这里就呈现到"反馈"为止，不做补全式臆造。
+ *   - "product"：v0.1 Baseline Spec 的产品决定 —— 主理人 2026-10-07 明确不再等旧原文，
+ *     把已实现并经确认的结构定为 v0.1 基线。这些段落不是"等待验证的草稿"，
+ *     改它们要走 v0.2 的产品决策，不是"等谁补一份旧方案"。
  */
-
-export type LessonSource = "spec" | "drafted";
+export type LessonSource = "spec" | "product";
 
 export interface Lesson {
   id: string;
@@ -38,7 +36,7 @@ export const LESSONS: Lesson[] = [
   {
     id: "lesson-02",
     title: "宣言不是事实",
-    source: "drafted",
+    source: "product",
     cards: [
       "「我要每天学习 4 小时」是一句宣言。宣言描述的是愿望，不是你的行为能力。",
       "系统会记住你说过的话，但判断依据只用你实际记录下来的那些次。",
@@ -49,7 +47,7 @@ export const LESSONS: Lesson[] = [
   {
     id: "lesson-03",
     title: "没做是一次数据",
-    source: "drafted",
+    source: "product",
     cards: [
       "没做不等于你不行。它只说明某个条件没满足。",
       "流程是：中断 → 看原因 → 调整 → 恢复 → 记下学到什么。",
@@ -61,7 +59,7 @@ export const LESSONS: Lesson[] = [
   {
     id: "lesson-04",
     title: "这个软件该越来越少用",
-    source: "drafted",
+    source: "product",
     cards: [
       "连续记录多少天、每天打开多少次，这些不是本产品的目标。",
       "理想走向是：高监督 → 中监督 → 轻提醒 → 无提醒 → 自主行动 → 毕业。",

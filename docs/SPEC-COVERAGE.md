@@ -5,12 +5,13 @@
 
 - **成立** —— 有当轮可复跑的测试或实测读数支撑
 - **部分** —— 做了，但覆盖不到方案书那句话的全部范围（缺哪块写明）
-- **未证** —— 无规范原文可依，或手上没有能判真伪的证据
+- **未证** —— 手上没有能判真伪的证据
+- **产品决定** —— 没有外部原文可比照，判据就是 Baseline 本身；改动它要走 v0.2 的产品决策，而不是等谁补一份旧方案
 
-> 前提：**方案书在第 11 节（Lesson 01）中途截断。** §11 之后（含 Stage 02–07 的详细规格、
-> AI 辅助的具体形态、以及 §12 起的全部内容）主理人没有提供。
-> 因此下面凡属 Stage 02–07 的实现，依据是 §1 的十三步流程、§2.1/§2.4/§2.5 的价值观条款
-> 与 §4 的阶段表，**不是各节自己的详细规格**。等完整段落到位后应逐条重跑这张表。
+> **规范真源现在是 [BASELINE.md](BASELINE.md)（主理人 2026-10-07 定稿的 v0.1 Baseline Spec）。**
+> 原方案书在第 11 节中途截断，后续原文不再等待、也不追补：已经实现并经确认的结构就是 v0.1 的规范。
+> 因此下表里 Stage 02-07 与 Lesson 02-04 的性质是「产品决定」，不再是「等待旧原文验证」。
+> 历史留在 git 里即可。
 
 | 方案书 | 要求 | 落在哪 | 由什么证明 | 状态 |
 | --- | --- | --- | --- | --- |
@@ -29,7 +30,10 @@
 | §9 | 四象限结构化展示；不算「改变指数」；AI 不做人格诊断 | `copy.equation.quadrants`、`evidence.reviewAudit` | 象限标题与方案书图内四格文字逐字一致；`domain.test.ts`：审计结论只产出**问句**，不产出评分或判断 | 成立 |
 | §10 | 微型交互课程，每段 2–5 分钟，不是长文章 | `content/lessons.ts`、`ui/Understand.tsx` | `domain.test.ts`：四段各写一句话才放行（`gate.lessons`） | 部分 —— 「2–5 分钟」是内容体量目标，只有字数间接约束，没有计时实测 |
 | §11 | Lesson 01 原文（知道≠行动≠重复≠自动化 与那条链条） | `content/lessons.ts` 中 `source: "spec"` 的那条 | `shame-free-language.test.ts` 覆盖其文案 | 部分 —— 方案书在链条中途断句，断点之后的内容未收到，只做到截断处 |
-| §11 之后 | Lesson 02–04 与 Stage 02–07 的详细规格 | 现有实现按 §1/§2/§4 起草 | 源码标 `source: "drafted"`；CHANGELOG 与 README 已声明 | 未证 —— 无原文可对照，到位后应逐段替换并重跑本表 |
+| Baseline §1 | 新用户未经 AWARE→UNDERSTAND→DECIDE，不许被推进到「我要改变」 | `stages.canEnter` 与服务层 `createChange` 的 `GateError`；`App` 路由 | `repository.test.ts` 没做检查就不许建 Change；`ui-smoke.test.tsx` 首屏无目标入口；缺决定时 `canEnter(…, 3)` 给 `gate.commit` | 成立 |
+| Baseline §3 | 三个合法出口 change / observe / keep；后两者不自动归档、可回来重选 | `DecisionKind`、`repository.setDecision` / `archiveChange`、`Decide` 的 held 卡片 | `repository.test.ts` 三条：选 keep 后仍 active 且未被推进；必须由用户自己按归档才让出名额；已决定改变的那条不许归档 | 成立 |
+| Baseline §3 | 旧导出文件里的 commit / notNow / stayAsIs 要读得进来；认不出的值整份拒绝 | `repository.normalizeDecisions` | `repository.test.ts`：三个旧值逐个翻译到位；未知 kind 导入被拒且现有数据逐字节未变 | 成立 |
+| 原 §11 之后 | Lesson 02–04 与 Stage 02–07 的内容细节 | `content/lessons.ts`（`source: "product"`）与各阶段界面 | 判据测试覆盖阶段推进与不变量；内容本身是产品决定 | 产品决定 |
 | 项目性质 | 开源、Local-first、自托管友好 | `LICENSE`、相对 base 构建、手写 SW | `local-first.test.ts`（27 条）＋真浏览器 15 项：断网可开、请求全同源、IndexedDB 落库、刷新不丢、控制台零报错 | 成立 |
 | §9 设想的 AI 辅助 | 矛盾／未明确／可继续探索的提示 | `evidence.reviewAudit` 为**本地确定性规则** | 见上；未接任何模型、未联网 | 部分 —— 与方案书字面「允许 AI」不同形，这是刻意的取舍，已在 README 记录 |
 
@@ -39,4 +43,4 @@
 - 真机回归：只验了桌面 Chrome 与 420×880 视口，没验 iOS／Android 实设备。
 - 键盘可达性与读屏实测：`Choice` 用原生 `input`＋`label`，语义上可访问，但没跑过
   VoiceOver／键盘全流程，这条不写成「已满足无障碍」。
-- 方案书 §12 起若有指标、数据模型、部署等硬要求，本轮**完全没接触**，不能声称已覆盖。
+- GitHub Pages 在线版与「线上那一格」的真机验收读数：见本表末尾，跑完再记。
