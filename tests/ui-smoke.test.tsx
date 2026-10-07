@@ -205,3 +205,15 @@ describe("Baseline §1（续）：被阶段判据拦下时必须说清原因，�
     expect(screen.queryByText(/设计一个实验/)).toBeNull();
   });
 });
+describe("数据所有权：清空之后界面要立刻跟上", () => {
+  it("设置里点「清空本机全部数据」→ 回到首屏，库也真空了", async () => {
+    await walkToDecide();
+    window.confirm = () => true;
+    fireEvent.click(screen.getByRole("button", { name: "数据" }));
+    fireEvent.click(screen.getByRole("button", { name: "清空本机全部数据" }));
+    expect(await screen.findByText(/你可能不需要/)).toBeTruthy();
+    await waitFor(() => expect(store.peek()).toBeNull());
+    // 首屏上没有 DECIDE 出口，也没有半条残留的 Change
+    expect(screen.queryByText("我决定改变")).toBeNull();
+  });
+});

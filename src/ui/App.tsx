@@ -61,7 +61,16 @@ export function App({ store }: { store?: KvStore } = {}) {
       {err ? <Card tone="err">{err}</Card> : null}
 
       {view === "settings" ? (
-        <Settings repo={repo} onClose={() => setView("app")} />
+        <Settings
+            repo={repo}
+            onClose={() => {
+              setView("app");
+              // 关掉设置页必须重读一次库：设置页里会导出/导入/**清空**。
+              // 之前只切视图不刷新，清空之后界面还挂着旧数据，
+              // 用户看不出自己按下了什么 —— 真浏览器验收就是这么抓到的。
+              void refresh();
+            }}
+          />
       ) : !readiness ? (
         <Aware repo={repo} readiness={readiness} onDone={() => void refresh()} />
       ) : !change ? (
