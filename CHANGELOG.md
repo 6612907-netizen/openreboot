@@ -2,6 +2,36 @@
 
 遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/) 与语义化版本。
 
+## [v0.1.1] — 2026-10-07
+
+规范定稿 + 在线体验版上线。**没有加任何新功能面**：不做云端 AI、账号、同步、社交、排行榜、
+连续打卡、积分、付费（见 docs/BASELINE.md §5）。
+
+### 变更
+
+- **规范真源**：`docs/BASELINE.md`（v0.1 Baseline Spec）。不再等截断的旧方案原文；
+  Lesson 02–04 与 Stage 02–07 的细节从"待验证草稿"改标为**产品决定**（`source: "product"`）。
+- **DECIDE 三个出口定型**为 `change / observe / keep`。`observe` 与 `keep` 不再自动归档：
+  用户可回来重选，结束要自己按「归档」，归档才让出唯一的 Active Change 名额。
+  旧导出文件里的 `commit / notNow / stayAsIs` 在导入层显式翻译；认不出的值整份拒绝。
+
+### 修复（都是真浏览器/CI 照出来的，不是代码读出来的）
+
+- DECIDE 被阶段判据拒绝时界面静默无反应；原因码→文案映射一直失效（会把 `gate.audit` 这种内部码甩给用户）。
+- 设置页「清空本机全部数据」后库已清空、界面仍挂着上一条 Change。
+- UNDERSTAND 每写完一段不刷新（四段课实际上走不完）；DECIDE 存完审计同样不刷新。
+- 测试里把 `exportedAt` 时间戳比进了"逐字节等价"，成为一条时快时慢的断言。
+
+### 新增
+
+- **GitHub Pages 在线体验版**与独立部署流水线：`gate` 不绿不部署；持 Pages 写权限的作业不跑 npm。
+- 子路径正确性判据（`tests/pwa-paths.test.ts` 7 条 + 门禁检查产物里的绝对路径）。
+- 线上验收工装扩到 27 格并支持 `--base`；结果记 `docs/ACCEPTANCE-PAGES.md`。
+- 隐私表述改为可核对的版本：应用本身无账号/后端/遥测，训练数据默认只在本机；
+  **Pages 的访问日志不等于 OpenReboot 收集训练数据**。
+
+用例 111 → 140 条，门禁新增覆盖面判据（报告缺文件即红）。
+
 ## [v0.1.0] — 2026-10-07
 
 第一个可用版本。八个 Stage 全流程可跑通，数据只落本机。
