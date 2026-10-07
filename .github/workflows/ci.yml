@@ -13,11 +13,16 @@ permissions:
 jobs:
   gate:
     runs-on: ubuntu-latest
+    strategy:
+      # 两枚都跑，是为了能写出一句有证据的 engines：哪一列绿，支持面就是哪一档。
+      fail-fast: false
+      matrix:
+        node-version: [24, 26]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: ${{ matrix.node-version }}
           cache: npm
       - run: npm ci
       - name: Run gate (typecheck + tests + build, fail-closed on empty test set)
@@ -26,10 +31,10 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: gate-report
+          name: gate-report-node-${{ matrix.node-version }}
           path: .gate/vitest.json
       - name: Upload distributable build
         uses: actions/upload-artifact@v4
         with:
-          name: openreboot-dist
+          name: openreboot-dist-node-${{ matrix.node-version }}
           path: dist/
