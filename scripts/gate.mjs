@@ -100,5 +100,11 @@ if (!existsSync(distIndex)) fail("dist/index.html 不存在 —— 构建产物�
 const assets = existsSync(join(ROOT, "dist", "assets")) ? readdirSync(join(ROOT, "dist", "assets")) : [];
 if (assets.length === 0) fail("dist/assets 为空 —— 构建产物不完整");
 
+// 产物里的资源路径必须全是相对的：以 / 开头意味着"域名根"，
+// 放 GitHub Pages 的 /openreboot/ 子路径下会整站 404，而在 localhost 根目录跑一切正常。
+const builtIndex = readFileSync(distIndex, "utf8");
+const absRefs = [...builtIndex.matchAll(/(?:src|href)="(\/[^"]*)"/g)].map((m) => m[1]);
+if (absRefs.length > 0) fail(`产物里有以 / 开头的资源路径，放子目录必坏：${absRefs.join(", ")}`);
+
 say(`\nPASS  门禁通过：${testFiles.length} 个测试文件 / ${total} 条用例 / ${assets.length} 个构建产物`);
 say("GATE_EXIT=0");

@@ -1,0 +1,73 @@
+name: Pages
+
+# 在线演示：把同一份 dist/ 部署到仓库官方 GitHub Pages。
+#
+# 为什么单独一条流水线，而且拆成两个作业：
+# 主理人要求「gate 失败禁止部署」。gate 作业不绿，deploy 作业根本不会启动。
+# 更重要的是权限隔离：**跑 npm 代码的那个作业不持有 Pages 写权限**，
+# 持有 Pages 写权限的作业只下载产物、原样上传，一步 npm install / build 都不跑
+# （npm ci 会执行依赖的安装脚本，把 Pages 令牌和依赖代码放进同一个作业是不必要的冒险）。
+# 顺带一条好处：部署出去的字节与被判据放行的字节完全相同，不是"同一份代码再编一遍"。
+#
+# 这个站点不引入账号、后端、遥测、第三方分析或广告 —— 部署的仍然是那份纯静态产物。
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  gate:
+    name: gate（不绿就不许部署）
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: 唯一的判据入口（与本地、与 CI 同一个命令）
+        run: npm run gate
+      - name: 交出被放行的产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: gated-dist
+          path: dist/
+          retention-days: 7
+
+  deploy:
+    name: deploy to GitHub Pages
+    needs: gate
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.out.outputs.page_url }}
+    steps:
+      - name: 取 gate 放行那份产物（不重新构建）
+        uses: actions/download-artifact@v4
+        with:
+          name: gated-dist
+          path: dist/
+      - name: Pages 按静态目录服务，关掉 Jekyll 处理
+        run: touch dist/.nojekyll
+      - id: pages
+        uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist/
+      - id: out
+        name: 部署
+        uses: actions/deploy-pages@v4
