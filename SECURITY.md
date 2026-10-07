@@ -2,9 +2,10 @@
 
 ## 报告方式
 
-请**不要**开公开 issue。用 GitHub 的
-[Private vulnerability reporting](https://github.com/6612907-netizen/openreboot/security/advisories/new)
-（仓库 → Security → Report a vulnerability）。非敏感的普通问题照常开 issue。
+优先走 GitHub 的私密漏洞报告：仓库页 → **Security → Report a vulnerability**。
+如果那个入口在本仓库不可用（这取决于仓库设置，我不在这儿打包票），
+就开一个普通 issue，标题以 `security:` 开头，**只写摘要与影响面，不要把利用细节或复现步骤写在公开 issue 里**，
+我在 issue 里回你之后我们再转私密渠道。
 
 这个项目由个人维护，没有 SLA。但我会在能响应时尽快回复，并优先处理任何
 「本机数据外泄」或「导入能破坏用户数据」类的问题。
