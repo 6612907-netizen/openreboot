@@ -197,3 +197,11 @@ describe("Baseline §3：observe / keep 是活路，不是死路", () => {
     expect(document.querySelector(".stages")?.textContent).toContain("REBOOT");
   });
 });
+describe("Baseline §1（续）：被阶段判据拦下时必须说清原因，不能静默", () => {
+  it("没存审计就点「我决定改变」：界面上给出人话，且仍停在 DECIDE", async () => {
+    await walkToDecide();
+    fireEvent.click(screen.getByText("我决定改变"));
+    expect(await screen.findByText(/先把上面那几栏填完/)).toBeTruthy();
+    expect(screen.queryByText(/设计一个实验/)).toBeNull();
+  });
+});

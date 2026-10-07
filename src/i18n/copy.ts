@@ -290,3 +290,16 @@ export const BANNED_USER_FACING_TERMS = [
 
 /** §2.2 规定应当使用的词，测试反向确认它们确实出现在文案里。 */
 export const PREFERRED_TERMS = ["中断", "阻碍", "恢复", "调整", "实验", "证据"] as const;
+
+/**
+ * 阶段判据返回的是 `gate.xxx` 这样的原因码（domain 层不写字面文案）。
+ * 这里负责把码翻成人话：**翻不出来的码不许静默回退成码本身** ——
+ * 之前 App 里就是拿 "gate.audit" 去查 copy.gates，键名没带前缀，
+ * 于是界面直接把内部码给用户看。tests/domain.test.ts 钉住"每个码都有人话"。
+ */
+export const gateMessage = (reason: string): string => {
+  const key = reason.replace(/^gate\./, "") as keyof typeof copy["gates"];
+  const text = (copy.gates as Record<string, string>)[key as string];
+  if (!text) throw new Error(`原因码 ${reason} 没有对应文案，别把内部码甩给用户`);
+  return text;
+};

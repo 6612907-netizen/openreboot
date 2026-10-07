@@ -1,9 +1,9 @@
 import { useState } from "react";
-import { copy } from "../i18n/copy";
+import { copy, gateMessage } from "../i18n/copy";
 import { Card, Choice, Field, ListField } from "./parts";
 import { reviewAudit } from "../domain/evidence";
 import type { Change, ChangeAudit, DecisionKind } from "../domain/types";
-import type { Repo } from "../storage/repository";
+import { GateError, type Repo } from "../storage/repository";
 
 const EMPTY: ChangeAudit = {
   desiredChange: "",
@@ -46,11 +46,17 @@ export function Decide({ repo, change, onDone }: { repo: Repo; change: Change; o
   };
 
   const decide = async (kind: DecisionKind) => {
-    await repo.setDecision(change.id, { kind, note });
-    if (kind === "change") {
-      await repo.advance(change.id, 3);
+    setErr(null);
+    try {
+      await repo.setDecision(change.id, { kind, note });
+      if (kind === "change") await repo.advance(change.id, 3);
+      onDone();
+    } catch (e) {
+      // 被阶段判据拦下时**必须让用户看见为什么**：GateError 带的是 reason 码，
+      // 翻成 copy.gates 里那句人话。之前这里什么都没接，用户点「我决定改变」
+      // 只看到页面不动 —— 静默拒绝跟"坏了"没区别。
+      setErr(e instanceof GateError ? gateMessage(e.reason) : (e as Error).message);
     }
-    onDone();
   };
 
   const f = copy.audit.fields;

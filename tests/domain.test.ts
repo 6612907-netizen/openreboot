@@ -1,3 +1,6 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+import { gateMessage } from "../src/i18n/copy";
 import { describe, expect, it } from "vitest";
 import { canEnter, lessonsDone, readinessComplete, lessonsRequired } from "../src/domain/stages";
 import { summarizeEvidence, declarationGap, reviewAudit, median } from "../src/domain/evidence";
@@ -137,4 +140,18 @@ describe("§2.5 监督只降不升，且无证据不降", () => {
     expect(graduationReady(c, false)).toBe(false);
     expect(graduationReady(c, true)).toBe(true);
   });
+});
+
+describe("阶段判据的原因码必须都能翻成人话（不许把内部码甩给用户）", () => {
+  const src = readFileSync(join(process.cwd(), "src/domain/stages.ts"), "utf8");
+  const codes = [...src.matchAll(/reason:\s*"([^"]+)"/g)].map((m) => m[1] as string);
+  it("stages.ts 里确实在抛原因码", () => {
+    expect(codes.length).toBeGreaterThan(5);
+  });
+  for (const code of [...new Set(codes)]) {
+    it(`${code} 有对应文案`, () => {
+      expect(gateMessage(code)).not.toBe(code);
+      expect(gateMessage(code).length).toBeGreaterThan(3);
+    });
+  }
 });

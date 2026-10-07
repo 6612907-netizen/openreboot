@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { copy } from "../i18n/copy";
+import { copy, gateMessage } from "../i18n/copy";
 import { Card, Field, t } from "./parts";
 import { idbStore, type KvStore } from "../storage/db";
 import { createRepository, GateError, type Repo } from "../storage/repository";
@@ -31,7 +31,7 @@ export function App({ store }: { store?: KvStore } = {}) {
         await fn();
         await refresh();
       } catch (e) {
-        if (e instanceof GateError) setErr(copy.gates[e.reason as keyof typeof copy.gates] ?? e.reason);
+        if (e instanceof GateError) setErr(gateMessage(e.reason));
         else setErr((e as Error).message);
       }
     },
